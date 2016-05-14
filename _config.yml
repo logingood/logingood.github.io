@@ -1,0 +1,44 @@
+# Welcome to Jekyll!
+#
+# This config file is meant for settings that affect your whole blog, values
+# which you are expected to set up once and rarely need to edit after that.
+# For technical reasons, this file is *NOT* reloaded automatically when you use
+# 'jekyll serve'. If you change this file, please restart the server process.
+
+# Site settings
+title: Network Engineer in DevOps world
+email: muhtarov.mr@gmail.com
+description: > # this means to ignore newlines until "baseurl:"
+  Blog about software networks, Linux containers, network orchestration, overlay networks, design and orchestration. 
+  Docker, Kubernetes and Rocket networking. Opensource SDN and NFV solutions.
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "http://murat1985.github.io" # the base hostname & protocol for your site
+github_username:  murat1985
+
+# Build settings
+markdown: kramdown
+
+picture:
+  source: "images/_originals"
+  output: "images"
+  markup: "picture"
+  presets:
+    hero:
+      attr:
+        class: "page__hero-image"
+        itemprop: "image"
+      ppi: [1]
+      source_1600:
+        media: "(min-width: 1600px)"
+        width: "1600"
+      source_1024:
+        media: "(min-width: 1024px)"
+        width: "1024"
+      source_768:
+        media: "(min-width: 768px)"
+        width: "768"
+      source_600:
+        media: "(min-width: 600px)"
+        width: "600"
+      source_default:
+        width: "320"
