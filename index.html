@@ -8,13 +8,24 @@ layout: default
 
   <ul class="post-list">
     {% for post in site.posts %}
-      <li>
-        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+    <li>
+    <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span><a class="post-link" href="{{ BASE_PATH }}{{ post.url }}">{{ post.title }}</a>
+    {{ post.excerpt }}
+    {{ post.content | strip_html | truncatewords:75}}<br>
+            <a href="{{ post.url }}">Read more...</a><br><br>
+     {% assign foundImage = 0 %}
+     {% assign images = post.content | split:"<img " %}
+      {% for image in images %}
+        {% if image contains 'src' %}
 
-        <h2>
-          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
-        </h2>
-      </li>
+            {% if foundImage == 0 %}
+                {% assign html = image | split:"/>" | first %}
+                <img height="55%" width="55%" {{ html }} />
+                {% assign foundImage = 1 %}
+            {% endif %}
+        {% endif %}
+      {% endfor %}
+    </li>
     {% endfor %}
   </ul>
 
