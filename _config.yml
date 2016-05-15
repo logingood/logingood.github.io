@@ -9,7 +9,7 @@
 title: Network Engineer in DevOps world
 email: muhtarov.mr@gmail.com
 description: > # this means to ignore newlines until "baseurl:"
-  Blog about software networks, Linux containers, network orchestration, overlay networks, design and orchestration. 
+  Blog about software networks, Linux containers, network orchestration, overlay networks, network design and automation. 
   Docker, Kubernetes and Rocket networking. Opensource SDN and NFV solutions.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://murat1985.github.io" # the base hostname & protocol for your site
