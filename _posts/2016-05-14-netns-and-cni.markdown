@@ -9,14 +9,14 @@ categories: kubernetes cni
 {:toc}
 
 ## Introduction
-[Container Network Interface](https://github.com/containernetworking/cni) is a great approach that allows to build container networking using different control and forwarding plane implementations avaialable for Linux. In this post lets make quick introduction into Linux network namespaces and Container Network Interface.
-First of all to get better understanding what is CNI we will look into linux containers network prinicples.
+[Container Network Interface](https://github.com/containernetworking/cni) is a great approach that allows to build container networking using different control and forwarding plane implementations available for Linux. In this post lets make quick introduction into Linux network namespaces and Container Network Interface.
+First of all to get better understanding what is CNI we will look into linux containers network principles.
 
 {% include image.html url="/images/NS-intro.png" description="Introduction into Network Namespaces" %}
 
-This diagramm represents the way how network namespaces are orgnaised on the typical node which uses containerisation.
+This diagram represents the way how network namespaces are organised on the typical node which uses containerisation.
 
-Usualy there is a bridge interface that called docker0, kbr0, cni0 and etc. For simplicity we named it *bridge0*. This bridge interface links together interfaces which are named vethXXXXX. I guess you noticed that if you are running couple of docker containers on your linux box there are two vethXXXXX interfaces in your ```ip addr``` or ```ifconfig``` output.
+Usually there is a bridge interface that called docker0, kbr0, cni0 and etc. For simplicity we named it *bridge0*. This bridge interface links together interfaces which are named vethXXXXX. I guess you noticed that if you are running couple of docker containers on your linux box there are two vethXXXXX interfaces in your ```ip addr``` or ```ifconfig``` output.
 
 This interfaces are representing a *root namespace* leg of the link between root and container namespaces. Lets look at the output below:
 
@@ -95,9 +95,9 @@ docker exec -ti  eed0e7bd4f9d ifconfig |grep eth
 
 ## Container network interface
 
-Container network interface [CNI](https://github.com/containernetworking/cni) is the approach that aims standardising of container networking. The main purpose of this project is to make container networking flexible, exstensible and easy to use with different control and data plane implementations. Later I will show how easy is to use it. 
+Container network interface [CNI](https://github.com/containernetworking/cni) is the approach that aims standardising of container networking. The main purpose of this project is to make container networking flexible, extensible and easy to use with different control and data plane implementations. Later I will show how easy is to use it. 
 
-CNI has several plugn types. The most important of them are ```main``` and ```ipam``` (ip managemnet). Main plugin does manipulations with network namespaces, e.g. create veth pair, linking it inside the container, connecting to a bridge and etc. IPAM plugin manages IP setting allocations.
+CNI has several plugin types. The most important of them are ```main``` and ```ipam``` (ip managemnet). Main plugin does manipulations with network namespaces, e.g. create veth pair, linking it inside the container, connecting to a bridge and etc. IPAM plugin manages IP setting allocations.
 
 If we look inside one of the scripts from here [https://github.com/containernetworking/cni](https://github.com/containernetworking/cni/blob/master/scripts/docker-run.sh#L8-L20) you will be surprised that it uses very similar principal that was described above.
 
@@ -116,14 +116,14 @@ And figuring out the path of the namespace:
 
 Then we can execute our CNI plugin that will create an interface, assign IP address, mask and gateway. This all happens by means of golang library which is the part of CNI project [github.com/containernetworking/cni/pkg/ip](https://github.com/containernetworking/cni/tree/master/pkg/ip). Library itself uses [github.com/vishvananda/netlink](https://github.com/vishvananda/netlink), which is golang implementation of ```ip tools```.  
 
-Finally the script conects network namespace of the first container to the new one, where all settings already configured and linked inside Root namespace in the way which is defined by particular CNI plugin:
+Finally the script connects network namespace of the first container to the new one, where all settings already configured and linked inside Root namespace in the way which is defined by particular CNI plugin:
 {% highlight bash %}
 docker run --net=container:$contid $@
 {% endhighlight %}
 
 ## CNI configuration and binaries
 
-CNI configuration is stored in ```/etc/cni/net.d/``` and you should name your files with preceeding priority (e.g. 10,20) and .conf (e.g. /etc/cni/net.d/10-mynet.conf) extension. Here is the example of the configuration format that I used for [BaGPipe CNI plugin](https://github.com/murat1985/bagpipe-cni): 
+CNI configuration is stored in ```/etc/cni/net.d/``` and you should name your files with preceding priority (e.g. 10,20) and .conf (e.g. /etc/cni/net.d/10-mynet.conf) extension. Here is the example of the configuration format that I used for [BaGPipe CNI plugin](https://github.com/murat1985/bagpipe-cni): 
 {% highlight json %}
 {
   "name": "mynet",
@@ -156,7 +156,7 @@ CNI_PATH
 
 ```CNI_COMMAND``` - add or delete. This commands creates or deletes network interface inside the container with all necessary operations.
 ```CNI_NETNS``` - namespace path e.g. ```/proc/$PID/ns/net```.
-```CNI_IFNAME``` - the naming of network interface inside the container (ususally ```eth0```).
+```CNI_IFNAME``` - the naming of network interface inside the container (usually ```eth0```).
 ```CNI_PATH``` - path to CNI plugin binaries, for Kubernetes it will be ```/opt/cni/bin```.
 
 Plugins code worked pretty well for me with [golang compiler 1.6](https://tip.golang.org/doc/go1.6).
@@ -211,6 +211,6 @@ func setupVeth(netns string, ifName string, mtu int) (contMacAddr string, hostVe
 {% endhighlight %}
 
 In this particular example we wrote function that allows us to execute  ```net.Interfaces()``` under the given network namespace. It is analog of the command: ```ip netns exec $NS_NAME ip link```
-Then we can excract Hardware Address (MAC address) and the name of the root namespace leg of newly generated veth pair.
+Then we can extract Hardware Address (MAC address) and the name of the root namespace leg of newly generated veth pair.
 
-That is it for today, in Part 2 we will discuss two intersting projects [BaGPipe BGP](https://github.com/Orange-OpenSource/bagpipe-bgp) and [goBGP](https://github.com/osrg/gobgp). We will use them together with CNI to build Kubernetes networks.
+That is it for today, in Part 2 we will discuss two interesting projects [BaGPipe BGP](https://github.com/Orange-OpenSource/bagpipe-bgp) and [goBGP](https://github.com/osrg/gobgp). We will use them together with CNI to build Kubernetes networks.
