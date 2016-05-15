@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Experiments with container networking: Part 3"
-date:   2016-05-16 17:24:00 +1000
+date:   2016-05-15 17:24:00 +1000
 categories: kubernetes cni
 ---
 
