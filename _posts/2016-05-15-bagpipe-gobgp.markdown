@@ -8,13 +8,13 @@ categories: kubernetes cni
 
 As a part of our discussion about container networking, CNI and Kubernetes lets have a look to a very intersting project [BaGPipe BGP](https://github.com/Orange-OpenSource/bagpipe-bgp).
 
-This tool allows you to create a BGP speaker on the Linux machine that can advertise IP VPN and EVPN BGP routes, together with forwarding plane configuration. Implemented on Python it uses [ExaBGP](https://github.com/Exa-Networks/exabgp) code for talking on BGP protocol and own python implement libraries to manipulate Linux network namespaces, VXLAN networks and MPLS networks based on [OvS](http://openvswitch.org/).
+This tool allows you to create a BGP speaker on the Linux machine that can advertise IP VPN and EVPN BGP routes, together with forwarding plane configuration. Implemented on Python it uses [ExaBGP](https://github.com/Exa-Networks/exabgp) code for talking on BGP protocol and own python implemented libraries to manipulate Linux network namespaces, VXLAN networks and MPLS networks based on [OvS](http://openvswitch.org/).
 
 One of the main peculiarities of this project is the REST API that could be used for BGP route advertisements. 
 
 BaGPipe BGP daemon is listening by default on ```127.0.0.1:8082``` and accepts POST and GET methods with json payload.
 
-JSON payload format is pretty easy and straight forward:
+JSON payload format is pretty simple and straight forward:
 {% highlight golang %}
   // JSON payload struct for BaGPipe BGP
   type Message struct {
@@ -36,7 +36,7 @@ JSON payload format is pretty easy and straight forward:
   }
 {% endhighlight %}
 
-Apparently that is very easy to use this message format by some external tool, especially by a CNI plugin. 
+Apparently that is very easy to use this message format by arbitary external tool, especially by a CNI plugin. 
 
 This project is only able to establish BGP session but doesn't accept incoming connections. That is why we require a BGP router to connect together different BaGPipe BGP nodes. This router should act as a Route Reflector in order to re-advertise iBGP rotes. The great example of such a router is [GoBGP](https://github.com/osrg/gobgp). This lightweight, powerful and easy to configure BGP daemon is written on Go.
 
