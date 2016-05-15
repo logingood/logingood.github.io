@@ -213,4 +213,4 @@ func setupVeth(netns string, ifName string, mtu int) (contMacAddr string, hostVe
 In this particular example we wrote function that allows us to execute  ```net.Interfaces()``` under the given network namespace. It is analog of the command: ```ip netns exec $NS_NAME ip link```
 Then we can extract Hardware Address (MAC address) and the name of the root namespace leg of newly generated veth pair.
 
-That is it for today, in Part 2 we will discuss two interesting projects [BaGPipe BGP](https://github.com/Orange-OpenSource/bagpipe-bgp) and [goBGP](https://github.com/osrg/gobgp). We will use them together with CNI to build Kubernetes networks.
+That is it for today, in [Part 2](http://murat1985.github.io/kubernetes/cni/2016/05/15/bagpipe-gobgp.html) we will discuss two interesting projects [BaGPipe BGP](https://github.com/Orange-OpenSource/bagpipe-bgp) and [goBGP](https://github.com/osrg/gobgp). We will use them together with CNI to build Kubernetes networks.
