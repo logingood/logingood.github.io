@@ -9,7 +9,7 @@ categories: kubernetes cni
 
 The third part of the discussion about CNI, Kubernetes and EVPN BGP brings us to the solution that is shown on a topology below. We want our solution to stitch a Kubernetes orchestrated datacenter and provide us with seamless inter and intra DC communication between pods. All this should be implemented with regards to service-oriented model.
 
-{% include image.html url="/images/kubernetes-dc-bgp.png" description="multi-datacenter kubernetes network routed with bgp" %}
+{% include image.html url="/images/Kubernetes-DC-BGP.png" description="multi-datacenter kubernetes network routed with bgp" %}
 
 To show that we can deliver this design we will prepare a proof-of-concept environment. To do this we require a way to integrate the BaGPipe BGP daemon into Kubernetes environment. Luckily [kubelet](http://kubernetes.io/docs/admin/kubelet/) (a process that is responsible for managing pods on the Kubernetes node) supports CNI interface. 
 
