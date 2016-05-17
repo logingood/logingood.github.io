@@ -18,6 +18,8 @@ github_username:  murat1985
 # Build settings
 markdown: kramdown
 
+google_analytics: UA-77858519-1
+
 picture:
   source: "images/_originals"
   output: "images"
