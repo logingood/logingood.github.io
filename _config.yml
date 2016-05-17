@@ -44,3 +44,6 @@ picture:
         width: "600"
       source_default:
         width: "320"
+
+gems:
+- jekyll-email-protect
