@@ -1,0 +1,311 @@
+---
+layout: post
+title:  "Ephemeral remote access IPSEC VPN server with Terraform and StrongSWAN"
+date:   2017-04-09 14:35:28 +1000
+categories: terraform strongswan ipsec vpn
+---
+# Dynamic VPN with Terraform and Strongswan
+
+{:toc}
+
+## Introduction
+
+[StrongSWAN](https://strongswan.org/) is a great opensource product for building software VPN networks, based on IPSEC. It is really easy to build Site-2-Site or Remote-Access VPN with different architectures using StrongSWAN, lots of examples are published in their [wiki](https://wiki.strongswan.org/projects/strongswan). At the same time this piece of software provides great [test suite options](https://strongswan.org/test-scenarios.html) for integration testing.
+
+In this post we will try to make an automated and ephemeral remote access VPN server using [Terraform](https://terraform.io) infrastructure as a code abstraction tool, [Digital Ocean](https://m.do.co/c/eb230fc23336)
+and [StrongSWAN](https://strongswan.org/). For convenience I have created [github repository](https://github.com/murat1985/dovpn) with all source codes and Makefile.
+
+The remarkable part about this proposal is the fact that you are running  [Digital Ocean](https://m.do.co/c/eb230fc23336) droplet only for the duration of VPN session and it could be destroyed afterwards. A pre-shared secret key is being generated every time uniquely and dynamically pushed into the configuration of the VPN server and local client.
+
+
+## Terraform providers
+
+To implement the idea we are going to use the following terraform providers:
+
+* digital ocean
+* ssh-key 
+* randomkey
+
+Please refer to [Terraform Digital Ocean documentation](https://www.terraform.io/docs/providers/do/index.html). 
+
+### Digital Ocean API and provider
+
+[Digital Ocean](https://m.do.co/c/eb230fc23336) is one of the many providers that terraform supports (e.g. [AWS](https://aws.amazon.com/), [GCP](https://cloud.google.com/) and etc). Digital Ocean have a minimal [API interface](https://developers.digitalocean.com/) that allows you programmatically interact with their cloud. For example to list available droplet images of Ubuntu distributions you can use following command:
+
+```
+curl -X GET "https://api.digitalocean.com/v2/images?per_page=999" -H "Authorization: Bearer $TF_VAR_do_token" |jq ' .images[] | select( .distribution == "Ubuntu") '|grep 16-04
+
+```
+
+To find regions of Digital Ocean presence we can use another API call:
+```
+curl -X GET "https://api.digitalocean.com/v2/regions?per_page=999" -H "Authorization: Bearer $TF_VAR_do_token" |jq ' .[][] | .slug'
+
+"nyc1"
+"sfo1"
+"nyc2"
+...
+```
+
+The variable called `$TF_VAR_do_token` should be set, this variable must contain digital ocean token. The `TF_VAR` prefix is used by terraform to parse terraform related values from the shell environment.
+For instance in the experiment described here we used the following variables:
+```
+TF_VAR_do_token=token
+TF_VAR_domain_name=domain-name
+TF_VAR_droplet_name=droplet-name
+TF_VAR_ssh_key=~/.ssh/id_rsa_do.pub
+TF_VAR_do_region=region # e.g. nyc1
+```
+
+Each variable with `TF_VAR` suffix we can use later in the terraform template.
+
+
+{% highlight js %}
+provider "digitalocean" {
+  token = "${var.do_token}"
+}
+{% endhighlight %}
+
+### SSH key provider
+
+Terraform allows you to upload ssh key from file on your local laptop to the Digital Ocean cloud using following provider:
+
+```
+resource "digitalocean_ssh_key" "do_sshkey" {
+  name       = "Digital Ocean"
+  public_key = "${file("${var.ssh_key}")}"
+}
+```
+
+where `${var.ssh_key}` is `TF_VAR_ssh_key` variable from your environment. The variable represents a path to an ssh public key.
+
+
+### Random provider 
+
+Random provider is a great way to generate cryptographically random value, which could be used throughout the terraform template:
+
+{% highlight js %}
+resource "random_id" "ipsec_key" {
+  byte_length = 32
+}
+{% endhighlight %}
+
+### Terraform template to create Digital Ocean instance
+
+Lets put all our providers and resources together. In this configuration file we are doing the following:
+* Declaring our variables, that would be obtained from environment
+* Using additional three resources
+  * `digitalocean_droplet` - which allows to create DO instance with defined parameters
+  * `digitalocean_domain` - create a domain name within Digital Ocean
+  * `digitalocean_record` - create a domain record inside the created zone
+
+As you can see we are using interpolation inside terraform file, with `${resource_name}` syntax construct.
+
+{% highlight bash %}
+variable "do_token" {}
+variable "ssh_key" {}
+variable "domain_name" {}
+variable "droplet_name" {}
+variable "do_region" {}
+
+# Configure the DigitalOcean Provider
+provider "digitalocean" {
+  token = "${var.do_token}"
+}
+
+resource "digitalocean_ssh_key" "do_sshkey" {
+  name       = "Digital Ocean"
+  public_key = "${file("${var.ssh_key}")}"
+}
+
+resource "random_id" "ipsec_key" {
+  byte_length = 32
+}
+
+# init.sh script template file. We can use it to bootstrap instance after we have created it
+data "template_file" "init" {
+  template = "${file("init.tpl")}"
+  vars {
+    secret_key = "${random_id.ipsec_key.hex}"
+  }
+}
+
+# Create a droplet ubuntu-16-04-x64 flavour
+resource "digitalocean_droplet" "mydroplet" {
+  image    = "ubuntu-16-04-x64"
+  name     = "${var.droplet_name}"
+  region   = "${var.do_region}"
+  size     = "512mb"
+  ssh_keys = ["${digitalocean_ssh_key.do_sshkey.id}"]
+  user_data = "${data.template_file.init.rendered}"
+}
+
+
+# Create domain name zone, DNS servers should be set to digital ocean values
+resource "digitalocean_domain" "my-domain" {
+  name       = "${var.domain_name}"
+  ip_address = "${digitalocean_droplet.mydroplet.ipv4_address}"
+}
+
+# Domain pointer set could be used as VPN endpoint address
+resource "digitalocean_record" "mydroplet" {
+  domain = "${digitalocean_domain.my-domain.name}"
+  type   = "A"
+  name   = "${var.droplet_name}"
+  value  = "${digitalocean_droplet.mydroplet.ipv4_address}"
+}
+
+{% endhighlight %}
+
+### Template files for terraform
+
+Terraform can use [template_file](https://www.terraform.io/docs/providers/template/d/file.html) resource to run the commands as user_data inside `digitalocean_droplet` resource or any other resources. When the instance is getting bootstrapped the file is being executed as a shell script. We are keeping it short and the main script is being downloaded from github repository:
+```
+#cloud-config
+
+runcmd:
+  - curl https://raw.githubusercontent.com/murat1985/dovpn/master/init.sh -o /tmp/init.sh
+  - chmod +x /tmp/init.sh
+  - /tmp/init.sh ${secret_key} | dd of=/var/log/bootstrap.log
+
+```
+
+`${secret_key}` is the parameter that we are sending inside the init script, it is take from `random_id` terraform provider.
+
+
+## Strongswan
+
+Strongswan is a solid open source product for different [IPSEC scenarios](https://wiki.strongswan.org/projects/strongswan). In this short post we will look closely to remote access VPN scenario. Strongswan uses concept of "road warriors" which are remote connecting IPSEC clients. As probably you know IPSEC consists of the set of different protocols and standards, such as IKE, ISAKMP, DH and cryptographic transforms. These building blocks of IPSEC could be used in various ways in order to implement protection suites that satisfy the needs or meet requirements. 
+
+In this particular example we will use IKEv2, see [RFC 7296](https://tools.ietf.org/html/rfc7296). IKEv2 is supported by most of modern handsets, such as Apple iphone, ipad and etc (due to [MOBIKE](https://tools.ietf.org/html/rfc4555) support), along with Windows and OS X based clients. The main difference between IKEv1 and IKEv2 is the way connection established. Instead of using quick and main mode during two phases as it is implemented with IKEv1, IKEv2 secures connection in four messages. That delivers certain security advantages and hardens parties' identity validation. Additionally, a certain amount of flexibility has been added, e.g. now each party can use its own way of authentication (PSK, RSA and etc) contrary to IKEv1 where parties must use the same authentication method.
+
+For simplicity we will use PSK authentication mode for road warrior with IKEv2. IKEv2 is implemented in Strongswan using [Charon](https://wiki.strongswan.org/projects/strongswan/wiki/Charon) daemon.
+
+![Strongswan VPN IKEv2](https://www.lucidchart.com/publicSegments/view/77945f26-8b28-4002-b0b5-a3978172882c/image.png)
+
+### Strongswan VPN Server configuration
+
+Let's look into server configuration file - `ipsec.conf`:
+
+{% highlight js %}
+# IKEv2 server config
+conn %default
+  ikelifetime=60m
+  keylife=20m
+  rekeymargin=3m
+  keyingtries=1
+  keyexchange=ikev2
+  authby=secret
+
+conn rw
+  left=$IP_ADDRESS
+  leftsubnet=0.0.0.0/0
+  leftfirewall=yes
+  keyexchange=ikev2
+  right=%any
+  rightsourceip=10.0.0.0/24
+  dpdaction=clear
+  leftid=droplet
+  rightid=phone
+  auto=add
+  ike=aes256-sha256-modp1024,aes128-sha1-modp1024,3des-sha1-modp1024! # Win7 is aes256, sha-1, modp1024; iOS is aes256, sha-256, modp1024; OS X is 3DES, sha-1, modp1024
+  esp=aes256-sha256,aes256-sha1,3des-sha1! # Win 7 is aes256-sha1, iOS is aes256-sha256, OS X is 3des-shal1
+  rekey=no
+
+{% endhighlight %}
+
+We are using $IP_ADDRESS in the [init.sh](https://github.com/murat1985/dovpn/blob/master/init.sh) which could be extracted from Digital Ocean meta information url, e.g.
+
+```
+IP_ADDRESS=$(curl http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
+```
+
+Provided API is quite convenient for self-provisioning purpose. 
+Another important configuration file that we are rendering dynamically called `ipsec.sercrets`, there we will put a random value that was generated by terraform random_id resource
+
+```
+echo droplet phone : PSK \"${1}\" >> /etc/ipsec.secrets
+```
+
+You could noticed that we used `leftid=droplet` and `rightid=phone`, the same values should be set in `ipsec.secrets`, or they could be replaced by keyword `%any`. The order `droplet phone` is important and should be opposite for client configuration.
+
+Interesting traffic in our case is a default route, and remote clients are receiving IP addresses from the pool `10.0.0.0/24`. 
+It is important to pay attention to the traffic direction. Strongswan always calls `left` VPN server and `right` remotely connecting clients (road warriors). But if you are setting up client side, then these two values should be changed respectively. 
+
+
+### VPN Client configuration 
+
+Short snippet of strongswan client could be found below:
+
+{% highlight shell %}
+# IKEv2 Strongswan client config
+config setup
+  
+conn client
+        keyexchange=ikev2
+        left=%defaultroute
+        leftsourceip=%config
+        leftid=phone
+        leftauth=psk
+        leftsendcert=never
+        leftfirewall=yes
+        right=$DOMAIN.NAME
+        rightid=droplet
+        rightauth=psk
+        rightsubnet=0.0.0.0/0
+        type=tunnel
+        auto=start
+{% endhighlight %}
+
+As the `right` you should put the domain name of your VPN server. Having a domain name in `TF_VAR_domain_name` could be useful as an IP address would be changed each time you destroy and recreate the instance.
+
+# Using makefile to create a temporary droplet for VPN purpose
+
+As I have mentioned in the beginning we can keep instance running only for the duration of VPN session. To do this we can wrap `terraform apply` and `terraform destroy` commands with make file adding some additional actions.
+
+We are extracting `IPSEC_KEY=$(shell terraform show|grep hex | cut -f 5 -d " ")` from `terraform show` command using shell tools. And an extra check has been added if we are running client based configuration, for those who doesn't have strongswan as a client installed.
+
+{% highlight makefile %}
+.PHONY: all plan apply vpnup destroy
+
+IPSEC_KEY=$(shell terraform show|grep hex | cut -f 5 -d " ")
+
+STRONGSWAN_CLIENT=$(shell which ipsec > /dev/null; echo $$?)
+
+all: plan apply vpnup
+
+plan: 
+  @terraform plan
+
+apply: 
+  @terraform apply
+
+vpnup:
+
+ifeq ($(STRONGSWAN_CLIENT), 0)
+  @echo "phone droplet : PSK \"${IPSEC_KEY}\"" > /etc/ipsec.secrets
+  @sleep 120
+  @service strongswan restart
+else
+  @echo "strongswan is not installed"
+endif
+
+destroy:
+  @ipsec down client
+  @terraform destroy
+{% endhighlight %}
+
+Sleep timeout for 120 seconds required to let terraform bring a digital ocean instance fully up before trying to connect it.
+
+When destroying the instance we should use `ipsec` cli to take the client down before destroying terraform instance. That will ensure the kernel to gracefully close the connection and start routing traffic unencrypted.
+
+Now you can create a droplet and VPN tunnel with 
+```
+make all
+```
+And destroy everything using:
+```
+make destroy
+```
+
+Hopefully this simple example could be useful in certain applications, and could potentially save you some money on cloud providers. Not every task requires to have AWS,GCP, Digital Ocean and etc instances up and running all the time.
