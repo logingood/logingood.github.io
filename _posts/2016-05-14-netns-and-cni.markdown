@@ -97,7 +97,7 @@ docker exec -ti  eed0e7bd4f9d ifconfig |grep eth
 
 Container network interface [CNI](https://github.com/containernetworking/cni) is the approach that aims standardising of container networking. The main purpose of this project is to make container networking flexible, extensible and easy to use with different control and data plane implementations. Later I will show how easy is to use it. 
 
-CNI has several plugin types. The most important of them are ```main``` and ```ipam``` (ip managemnet). Main plugin does manipulations with network namespaces, e.g. create veth pair, linking it inside the container, connecting to a bridge and etc. IPAM plugin manages IP setting allocations.
+CNI has several plugin types. The most important of them are ```main``` and ```ipam``` (ip management). Main plugin does manipulations with network namespaces, e.g. create veth pair, linking it inside the container, connecting to a bridge and etc. IPAM plugin manages IP setting allocations.
 
 If we look inside one of the scripts from here [https://github.com/containernetworking/cni](https://github.com/containernetworking/cni/blob/master/scripts/docker-run.sh#L8-L20) you will be surprised that it uses very similar principal that was described above.
 
