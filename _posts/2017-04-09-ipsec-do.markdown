@@ -13,7 +13,7 @@ categories: terraform strongswan ipsec vpn
 [StrongSWAN](https://strongswan.org/) is a great opensource product for building software VPN networks, based on IPSEC. It is really easy to build Site-2-Site or Remote-Access VPN with different architectures using StrongSWAN, lots of examples are published in their [wiki](https://wiki.strongswan.org/projects/strongswan). At the same time this piece of software provides great [test suite options](https://strongswan.org/test-scenarios.html) for integration testing.
 
 In this post we will try to make an automated and ephemeral remote access VPN server using [Terraform](https://terraform.io) infrastructure as a code abstraction tool, [Digital Ocean](https://m.do.co/c/eb230fc23336)
-and [StrongSWAN](https://strongswan.org/). For convenience I have created [github repository](https://github.com/murat1985/dovpn) with all source codes and Makefile.
+and [StrongSWAN](https://strongswan.org/). For convenience I have created [github repository](https://github.com/logingood/dovpn) with all source codes and Makefile.
 
 The remarkable part about this proposal is the fact that you are running  [Digital Ocean](https://m.do.co/c/eb230fc23336) droplet only for the duration of VPN session and it could be destroyed afterwards. A pre-shared secret key is being generated every time uniquely and dynamically pushed into the configuration of the VPN server and local client.
 
@@ -164,7 +164,7 @@ Terraform can use [template_file](https://www.terraform.io/docs/providers/templa
 #cloud-config
 
 runcmd:
-  - curl https://raw.githubusercontent.com/murat1985/dovpn/master/init.sh -o /tmp/init.sh
+  - curl https://raw.githubusercontent.com/logingood/dovpn/master/init.sh -o /tmp/init.sh
   - chmod +x /tmp/init.sh
   - /tmp/init.sh ${secret_key} | dd of=/var/log/bootstrap.log
 
@@ -214,7 +214,7 @@ conn rw
 
 {% endhighlight %}
 
-We are using $IP_ADDRESS in the [init.sh](https://github.com/murat1985/dovpn/blob/master/init.sh) which could be extracted from Digital Ocean meta information url, e.g.
+We are using $IP_ADDRESS in the [init.sh](https://github.com/logingood/dovpn/blob/master/init.sh) which could be extracted from Digital Ocean meta information url, e.g.
 
 ```
 IP_ADDRESS=$(curl http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)

@@ -63,7 +63,7 @@ Protocol is implemented using simple 8 bytes header with 24 bits addressing stri
 {% include image.html url="/images/vxlan.png" description="VXLAN datagram format" %}
 
 Regardless that the forwarding plane seem simple, overlay nature of this technology requires appropriate signalling. Different approaches were utilised to solve this problem. The first ones implied to use PIM or network controller, e.g. VMware NSX, Cisco Nexus and etc. Open source implementation which are used in [Docker](https://docs.docker.com/engine/userguide/networking/dockernetworks/) or [Flannel](https://github.com/coreos/flannel) suggest using a Key-Value backend such as [etcd](https://github.com/coreos/etcd), [Consul](consul.io) or [Zookeeper](https://zookeeper.apache.org/). Apparently a Key-Value storage would be required in such kind of solutions anyway to spread information about IP allocation but this would work inside datacenter. For inter-DC communication that does not look scalable and convenient. And here we can benefit from BGP EVPN solution.
-BaGPipe BGP perfectly fits for this purpose and that is why I decided to write [CNI plugin for it](https://github.com/murat1985/bagpipe-cni).
+BaGPipe BGP perfectly fits for this purpose and that is why I decided to write [CNI plugin for it](https://github.com/logingood/bagpipe-cni).
 
 # Topology description: containers, BaGPipe and GoBGP as RR
 
@@ -135,7 +135,7 @@ contid=$(docker run -dti --net none --name test1 busybox)
 contid=$(docker run -dti --net none --name test2 busybox)
 {% endhighlight %}
 
-Then we should expose network namespace of this containers as we did in [Part 1](http://murat1985.github.io/kubernetes/cni/2016/05/14/netns-and-cni.html):
+Then we should expose network namespace of this containers as we did in [Part 1](http://logingood.github.io/kubernetes/cni/2016/05/14/netns-and-cni.html):
 
 {% highlight bash %}
 # Get PID of the container based on container id that we get:
@@ -174,7 +174,7 @@ If we use wireshark we can see the traffic:
 
 {% include image.html url="/images/tcpdump.png" description="VXLAN container traffic" %}
 
-To make all this easier I wrote a [patch for BaGPipe BGP](https://github.com/murat1985/bagpipe-bgp/commit/ec412d59c6988831b0aa909267d55169c49c5460). It allows us to specify container ID (```--docker-container-id test1```) to bagpipe-rest-attach and bagpipe-rest-detach commands:
+To make all this easier I wrote a [patch for BaGPipe BGP](https://github.com/logingood/bagpipe-bgp/commit/ec412d59c6988831b0aa909267d55169c49c5460). It allows us to specify container ID (```--docker-container-id test1```) to bagpipe-rest-attach and bagpipe-rest-detach commands:
 
 {% highlight bash %}
 root@dockerbgp1:~# bagpipe-rest-attach --attach --port netns --ip 192.168.10.10 --network-type evpn --docker-container-id test1 --rt 64512:80
@@ -185,6 +185,6 @@ root@dockerbgp1:~# bagpipe-rest-attach --attach --port netns --ip 192.168.10.10 
 #=> response: 200
 {% endhighlight %}
 
-You can find more detailed description in my [fork of BaGPipe BGP](https://github.com/murat1985/bagpipe-bgp#an-e-vpn-docker-containers-example). However it is better to use [CNI plugin](https://github.com/murat1985/bagpipe-cni) for this purpose and talk to BaGPipe BGP using [REST API](https://github.com/Orange-OpenSource/bagpipe-bgp#rest-api-tool-for-interface-attachments).
+You can find more detailed description in my [fork of BaGPipe BGP](https://github.com/logingood/bagpipe-bgp#an-e-vpn-docker-containers-example). However it is better to use [CNI plugin](https://github.com/logingood/bagpipe-cni) for this purpose and talk to BaGPipe BGP using [REST API](https://github.com/Orange-OpenSource/bagpipe-bgp#rest-api-tool-for-interface-attachments).
 
 In Part 3 we will create a proof-of-concept lab with BaGPipe BGP CNI plugin and Kubernetes cluster.

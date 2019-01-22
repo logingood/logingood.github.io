@@ -15,7 +15,7 @@ To show that we can deliver this design we will prepare a proof-of-concept envir
 
 # How CNI plugin talks to BaGPipe BGP
 
-First of all let's understand how CNI can talk to BaGPipe BGP daemon. Fortunately BaGPipe BGP project implemented REST API that we can use from our CNI plugin as it was discussed in the [Part 2](http://murat1985.github.io/kubernetes/cni/2016/05/15/bagpipe-gobgp.html).
+First of all let's understand how CNI can talk to BaGPipe BGP daemon. Fortunately BaGPipe BGP project implemented REST API that we can use from our CNI plugin as it was discussed in the [Part 2](http://logingood.github.io/kubernetes/cni/2016/05/15/bagpipe-gobgp.html).
 
 There is a JSON structure that BaGPipe BGP expects to receive. Sending this kind of message allows us to avoid interaction with ```bagpipe-rest-attach``` command-line tool.
 
@@ -111,7 +111,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 {% endhighlight %}
 
-Function ```cmdDel``` implemented as well:  please refer to [BaGPipe CNI plugin implementation](https://github.com/murat1985/bagpipe-cni/blob/master/bagpipe.go#L204). To delete interface we require to enter inside pod namespace and delete veth link from there. Also we need to form JSON message and send it to BaGPipe REST API with ```detach``` command.
+Function ```cmdDel``` implemented as well:  please refer to [BaGPipe CNI plugin implementation](https://github.com/logingood/bagpipe-cni/blob/master/bagpipe.go#L204). To delete interface we require to enter inside pod namespace and delete veth link from there. Also we need to form JSON message and send it to BaGPipe REST API with ```detach``` command.
 
 
 I encountered certain difficulties in implementing cmdDel procedure because BaGPipe BGP requires a local interface name to be passed as an argument (which basicly is the interface belonging to root namespace, e.g. vethXXXXX) . Nevertheless thankfully to [ethtool go package](https://github.com/safchain/ethtool) I managed to get the *root namespace* leg index and then pass root namespace veth leg name to ```sendBagpipeReq``` function.
@@ -128,7 +128,7 @@ Diagram below is showing logical flow:
 
 {% include image.html url="/images/CNI-Bagpipe.png" description="multi-datacenter kubernetes network routed with bgp" %}
 
-CNI plugin receives configuration based on environment variables ```CNI_*``` from external application that executes it. For Kubernetes it would be kubelet. Bare in mind that configuration is taken from configuration file which stored at /etc/cni/net.d/*.conf. Example of configuration file can be found in [Part 1](http://murat1985.github.io/kubernetes/cni/2016/05/14/netns-and-cni.html). Then plugin creates veth interface pair, assigns IP address using ```ipam``` plugin and sends ```attach``` command to BaGPipe BGP daemon.
+CNI plugin receives configuration based on environment variables ```CNI_*``` from external application that executes it. For Kubernetes it would be kubelet. Bare in mind that configuration is taken from configuration file which stored at /etc/cni/net.d/*.conf. Example of configuration file can be found in [Part 1](http://logingood.github.io/kubernetes/cni/2016/05/14/netns-and-cni.html). Then plugin creates veth interface pair, assigns IP address using ```ipam``` plugin and sends ```attach``` command to BaGPipe BGP daemon.
 
 To understand better EVPN BGP NLRI format please find below a tcpdump (wireshark) snippet with explanation.
 
@@ -152,10 +152,10 @@ Next we should clone CNI github repository to ```/opt``` directory:
 git clone https://github.com/containernetworking/cni /opt/cni
 {% endhighlight %}
 
-Now we should clone [BaGPipe CNI plugin](https://github.com/murat1985/bagpipe-cni) into ```/opt/cni/plugins/main/bagpipe``` directory. Also we require to download ethtool go package.
+Now we should clone [BaGPipe CNI plugin](https://github.com/logingood/bagpipe-cni) into ```/opt/cni/plugins/main/bagpipe``` directory. Also we require to download ethtool go package.
 
 {% highlight bash %}
-git clone https://github.com/murat1985/bagpipe-cni /opt/cni/plugins/main/bagpipe
+git clone https://github.com/logingood/bagpipe-cni /opt/cni/plugins/main/bagpipe
 # Also we need
 go get github.com/safchain/ethtool
 {% endhighlight %}
@@ -249,7 +249,7 @@ dataplane_driver = linux_vxlan.LinuxVXLANDataplaneDriver
 ovsbr_interfaces_mtu=4000
 {% endhighlight %}
 
-We will use the GoBGP Route Reflector from [Part 2](http://murat1985.github.io/kubernetes/cni/2016/05/15/bagpipe-gobgp.html)
+We will use the GoBGP Route Reflector from [Part 2](http://logingood.github.io/kubernetes/cni/2016/05/15/bagpipe-gobgp.html)
 
 After configuration completed, restarting kubelet service on both nodes.
 
@@ -286,6 +286,6 @@ tcpdump -w /opt/mounts/kube.pcap -s0 -A -ni eth1
 
 {% include image.html url="/images/kube-pcap.png" description="Wireshark intercept of Kubernetes VXLAN with BaGPipe BGP" %}
 
-All in all we have shown that it is possible to use [BaGPipe BGP EVPN](https://github.com/Orange-OpenSource/bagpipe-bgp#an-e-vpn-example) implementation together with Kubernetes due to exceptional flexibility of [CNI interface](https://github.com/containernetworking/cni). We used in this PoC my own implementation of CNI plugin that I named [BaGPipe CNI](https://github.com/murat1985/bagpipe-cni). Anyone who is intersted in contribution or have questions about this PoC always welcome on email or pull request.
+All in all we have shown that it is possible to use [BaGPipe BGP EVPN](https://github.com/Orange-OpenSource/bagpipe-bgp#an-e-vpn-example) implementation together with Kubernetes due to exceptional flexibility of [CNI interface](https://github.com/containernetworking/cni). We used in this PoC my own implementation of CNI plugin that I named [BaGPipe CNI](https://github.com/logingood/bagpipe-cni). Anyone who is intersted in contribution or have questions about this PoC always welcome on email or pull request.
 
-[Part 1](http://murat1985.github.io/kubernetes/cni/2016/05/14/netns-and-cni.html) and [Part 2](http://murat1985.github.io/kubernetes/cni/2016/05/15/bagpipe-gobgp.html).
+[Part 1](http://logingood.github.io/kubernetes/cni/2016/05/14/netns-and-cni.html) and [Part 2](http://logingood.github.io/kubernetes/cni/2016/05/15/bagpipe-gobgp.html).

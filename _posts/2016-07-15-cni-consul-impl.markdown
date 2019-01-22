@@ -6,7 +6,7 @@ categories: kubernetes cni consul
 ---
 # Using Consul as IPAM backend for CNI plugins
 
-In one of the previous [posts](http://murat1985.github.io/kubernetes/cni/2016/05/15/kubernetes.html) we described PoC for Kubernetes network with [BaGPipe BGP CNI plugin](https://github.com/murat1985/bagpipe-cni). However we used local IP allocator and storage that comes with [CNI](https://github.com/containernetworking/cni/tree/master/plugins/ipam/host-local) basic plugins bundle. Apparently that is not useful for distributed multi-node environment. To address this issue I made an effort to create a proof of concept that uses [Consul](https://www.consul.io) backend to store IP allocations. Also here you can find examples how to use [Go Consul API](https://godoc.org/github.com/hashicorp/consul/api) - initialisation, putting values, creating session and locking. 
+In one of the previous [posts](http://logingood.github.io/kubernetes/cni/2016/05/15/kubernetes.html) we described PoC for Kubernetes network with [BaGPipe BGP CNI plugin](https://github.com/logingood/bagpipe-cni). However we used local IP allocator and storage that comes with [CNI](https://github.com/containernetworking/cni/tree/master/plugins/ipam/host-local) basic plugins bundle. Apparently that is not useful for distributed multi-node environment. To address this issue I made an effort to create a proof of concept that uses [Consul](https://www.consul.io) backend to store IP allocations. Also here you can find examples how to use [Go Consul API](https://godoc.org/github.com/hashicorp/consul/api) - initialisation, putting values, creating session and locking. 
 
 {% include image.html url="/images/Consul-POC-CNI-Kube.png" description="Consul with CNI PoC" %}
 <br>
@@ -87,7 +87,7 @@ Pro tip: Consul has very neat and nice web interface:
 
 ## Implementation
 
-As we mentioned above we should implement interface from store.go. To get this done we should implement certain Consul functions. I wouldn't describe in detail all the steps (you can find actual implementations in my [CNI fork](https://github.com/murat1985/cni/tree/master/plugins/ipam/store/consul) and standalone plugin which doesn't implement `LastReservedIP`, consul settings are stored in the network config file and it doesn't keep track on timestamps [cni-ipam-consul](https://github.com/murat1985/cni-ipam-consul)). Instead we will focus on Consul API and locking.
+As we mentioned above we should implement interface from store.go. To get this done we should implement certain Consul functions. I wouldn't describe in detail all the steps (you can find actual implementations in my [CNI fork](https://github.com/logingood/cni/tree/master/plugins/ipam/store/consul) and standalone plugin which doesn't implement `LastReservedIP`, consul settings are stored in the network config file and it doesn't keep track on timestamps [cni-ipam-consul](https://github.com/logingood/cni-ipam-consul)). Instead we will focus on Consul API and locking.
 
 First of all we have a crucial condition. As we are using consul we should find a way to pass settings of our backend store inside:
 
@@ -112,7 +112,7 @@ I have implemented both approaches: in cni-ipam-consul these values are in confi
 }
 {%  endhighlight %}
 
-End in the [cni repository fork](https://github.com/murat1985/cni) I used environment variables in the following way:
+End in the [cni repository fork](https://github.com/logingood/cni) I used environment variables in the following way:
 
 {% highlight bash %}
 CNI_ARGS="StoreAddr=127.0.0.1;StorePort=8500;StoreNs=dc1;IgnoreUnknown=1"
@@ -288,7 +288,7 @@ and you are done with Consul.
 
 To use standalone plugin you should download it and build using `go get` command:
 ```
-go get github.com/murat1985/cni-ipam-consul
+go get github.com/logingood/cni-ipam-consul
 ```
 
 Don't forget to specify as `GOBIN` path `/opt/cni/bin`, e.g.
@@ -296,7 +296,7 @@ Don't forget to specify as `GOBIN` path `/opt/cni/bin`, e.g.
 export GOBIN=/opt/cni/bin
 ```
 
-Please refer to the article [Kubernetes with BaGPipe BGP and CNI](http://murat1985.github.io/kubernetes/cni/2016/05/15/kubernetes.html) for further information.
+Please refer to the article [Kubernetes with BaGPipe BGP and CNI](http://logingood.github.io/kubernetes/cni/2016/05/15/kubernetes.html) for further information.
 
 You configuration file should be smth like below. You should specify `consul_addr`,`consul_port` and `dc`, as well as put `ipam` type as `consul`.
 

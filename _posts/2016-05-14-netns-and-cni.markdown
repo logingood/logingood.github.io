@@ -123,7 +123,7 @@ docker run --net=container:$contid $@
 
 ## CNI configuration and binaries
 
-CNI configuration is stored in ```/etc/cni/net.d/``` and you should name your files with preceding priority (e.g. 10,20) and .conf (e.g. /etc/cni/net.d/10-mynet.conf) extension. Here is the example of the configuration format that I used for [BaGPipe CNI plugin](https://github.com/murat1985/bagpipe-cni): 
+CNI configuration is stored in ```/etc/cni/net.d/``` and you should name your files with preceding priority (e.g. 10,20) and .conf (e.g. /etc/cni/net.d/10-mynet.conf) extension. Here is the example of the configuration format that I used for [BaGPipe CNI plugin](https://github.com/logingood/bagpipe-cni):
 {% highlight json %}
 {
   "name": "mynet",
@@ -213,4 +213,4 @@ func setupVeth(netns string, ifName string, mtu int) (contMacAddr string, hostVe
 In this particular example we wrote function that allows us to execute  ```net.Interfaces()``` under the given network namespace. It is analog of the command: ```ip netns exec $NS_NAME ip link```
 Then we can extract Hardware Address (MAC address) and the name of the root namespace leg of newly generated veth pair.
 
-That is it for today, in [Part 2](http://murat1985.github.io/kubernetes/cni/2016/05/15/bagpipe-gobgp.html) we will discuss two interesting projects [BaGPipe BGP](https://github.com/Orange-OpenSource/bagpipe-bgp) and [goBGP](https://github.com/osrg/gobgp). We will use them together with CNI to build Kubernetes networks.
+That is it for today, in [Part 2](http://logingood.github.io/kubernetes/cni/2016/05/15/bagpipe-gobgp.html) we will discuss two interesting projects [BaGPipe BGP](https://github.com/Orange-OpenSource/bagpipe-bgp) and [goBGP](https://github.com/osrg/gobgp). We will use them together with CNI to build Kubernetes networks.

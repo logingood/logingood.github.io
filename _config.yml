@@ -12,8 +12,8 @@ description: > # this means to ignore newlines until "baseurl:"
   Blog about software networks, Linux containers, network orchestration, overlay networks, network design and automation. 
   Docker, Kubernetes and Rocket networking. Open source SDN and NFV solutions.
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "http://murat1985.github.io" # the base hostname & protocol for your site
-github_username:  murat1985
+url: "http://logingood.github.io" # the base hostname & protocol for your site
+github_username:  logingood
 
 # Build settings
 markdown: kramdown

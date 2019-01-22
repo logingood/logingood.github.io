@@ -67,4 +67,4 @@ For [CNI](https://github.com/containernetworking/cni/tree/master/plugins/ipam) c
 
 Flannel already supports [multi-network overlay topologies](https://github.com/coreos/flannel#multi-network-mode-experimental) but this feature is marked as experimental. Also it is possible to run flannel in the [controller mode](https://github.com/coreos/flannel#multi-network-mode-experimental). They call it client-server mode and it allows to have a dedicated flannel controller which coordinates container IP advertisements between other flannel network participants.
 
-However flannel network requires further extension or proper L3 routing control plain on top of it. This would allow building more scalable topologies like described in this [post](murat1985.github.io/kubernetes/cni/2016/05/15/kubernetes.html).
+However flannel network requires further extension or proper L3 routing control plain on top of it. This would allow building more scalable topologies like described in this [post](logingood.github.io/kubernetes/cni/2016/05/15/kubernetes.html).
